@@ -1,0 +1,68 @@
+{
+    "$schema": "https://schemas.kicad.org/erc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-11-20T01:56:28",
+    "ignored_checks": [
+        {
+            "description": "Global label only appears once in the schematic",
+            "key": "single_global_label"
+        },
+        {
+            "description": "Four connection points are joined together",
+            "key": "four_way_junction"
+        },
+        {
+            "description": "SPICE model issue",
+            "key": "simulation_model_issue"
+        },
+        {
+            "description": "Assigned footprint doesn't match footprint filters",
+            "key": "footprint_filter"
+        }
+    ],
+    "included_severities": [
+        "error",
+        "warning",
+        "exclusion"
+    ],
+    "kicad_version": "10.0.8",
+    "sheets": [
+        {
+            "path": "/",
+            "uuid_path": "/2322211b-69aa-4e4a-8207-04163628e3e4",
+            "violations": [
+                {
+                    "description": "符号 'AO3400A' 与来源库 'Transistor_FET' 中的符号存在差异",
+                    "items": [
+                        {
+                            "description": "符号 Q1 [AO3400A]",
+                            "pos": {
+                                "x": 149.86,
+                                "y": 127.0
+                            },
+                            "uuid": "4a7837d6-6ab5-4f38-bf57-83201bd4fd08"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "lib_symbol_mismatch"
+                },
+                {
+                    "description": "在库 'Battery' 中找不到封装 'BatteryHolder_Keystone_3001'",
+                    "items": [
+                        {
+                            "description": "符号 BT1 [Battery_Cell]",
+                            "pos": {
+                                "x": 327.66,
+                                "y": 30.48
+                            },
+                            "uuid": "d3cef2c1-d570-49c0-9308-cee267a284ae"
+                        }
+                    ],
+                    "severity": "warning",
+                    "type": "footprint_link_issues"
+                }
+            ]
+        }
+    ],
+    "source": "light_alarm_red.kicad_sch"
+}

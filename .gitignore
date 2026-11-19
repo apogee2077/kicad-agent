@@ -10,6 +10,11 @@ out/
 *-bom.csv
 *-erc.json
 
+# === samples/ 是有意保留的存档，不受上面的生成物规则限制 ===
+!samples/*.net
+!samples/*-erc.json
+!samples/*.csv
+
 # === Python ===
 __pycache__/
 *.py[cod]
