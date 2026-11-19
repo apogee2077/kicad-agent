@@ -209,6 +209,7 @@ ERC 告警构成（实测）：
 ```
 kicad-agent/
 ├── agent.py            # 五步闭环 CLI（design / revise / check）
+├── try_tools.py        # W2 练习：最小工具调用 Agent（3 个工具 + 调用循环）
 ├── providers.py        # LLM 抽象：fixture 离线 / OpenAI 兼容
 ├── pipeline.py         # 提示词渲染 + 引脚表注入 + JSON 解析
 ├── schema.py           # pydantic 数据契约（BomStage / ConnectionStage / Design）
