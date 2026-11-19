@@ -76,19 +76,22 @@ def read_design(path: str) -> dict:
         return {"error": f"文件不存在: {path}"}
 
     data = json.loads(target.read_text(encoding="utf-8"))
-    refs = [item["ref"] for item in data.get("bom", [])]
-    by_prefix: dict[str, int] = {}
-    for ref in refs:
-        prefix = "".join(ch for ch in ref if ch.isalpha())
-        by_prefix[prefix] = by_prefix.get(prefix, 0) + 1
+
+    # 按「符号」分组，而不是按位号前缀。
+    # 按前缀分组会把 LED(D3~D10) 和肖特基二极管(D1,D2) 混成 "D: 10"，
+    # 模型只能瞎猜 —— 工具返回什么粒度，决定了模型能答多准。
+    groups: dict[str, list[str]] = {}
+    for item in data.get("bom", []):
+        key = f'{item.get("lib")}:{item.get("symbol")}'
+        groups.setdefault(key, []).append(f'{item["ref"]}={item.get("value", "")}')
 
     return {
         "file": path,
         "name": data.get("meta", {}).get("name", ""),
-        "component_count": len(refs),
+        "component_count": len(data.get("bom", [])),
         "net_count": len(data.get("nets", [])),
         "no_connect_count": len(data.get("no_connect", [])),
-        "components_by_prefix": by_prefix,
+        "components_by_symbol": groups,
     }
 
 
