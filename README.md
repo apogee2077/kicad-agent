@@ -10,8 +10,18 @@
 
 课程大作业的第一段流水线：把一句自然语言需求，变成 KiCad 能打开的原理图。
 
-本仓库目前只做了**地基**：证明「结构化描述 → `.kicad_sch` 文件 → kicad-cli 可校验」
-这条链路真的走得通，并且换成别人的电脑也能跑。LLM 接入是下一步。
+本仓库把作业基础任务的**五步闭环**都实现了：
+
+```
+自然语言 ──(02 提示词)──> BOM ──(03 提示词 + 真实引脚表)──> 连接关系 JSON
+                                                              │
+                                                     (04) validate + 生成原理图
+                                                              │
+                                                     (05) 追问 → 改 JSON → 重生成
+```
+
+每一步都有程序化校验挡着：结构校验（引脚是否存在 / 短路 / 漏接）、
+网表连通性分区比对、ERC。模型输出不合规就把错误回灌给它重试。
 
 ---
 
@@ -133,6 +143,37 @@ $CLI sch erc        --format json -o out/blinky-erc.json out/blinky.kicad_sch
 $CLI sch export bom               -o out/blinky-bom.csv  out/blinky.kicad_sch
 ```
 
+### 3.5 走完五步闭环（agent.py）
+
+```powershell
+# 步骤 02 + 03 + 04：一句话需求 -> BOM -> 连接关系 -> 原理图
+.venv\Scripts\python.exe agent.py design "帮我设计一块光闹钟：到预设时间后 LED 灯组亮起，亮度线性增长，第 5 分钟达到最亮并同时播放音乐闹铃"
+
+# 步骤 05：追问修改
+.venv\Scripts\python.exe agent.py revise designs/light_alarm.json "把 LED 限流电阻从 82Ω 换成 100Ω"
+
+# 只做结构校验
+.venv\Scripts\python.exe agent.py check designs/light_alarm.json
+```
+
+`--provider` 三个取值：
+
+| 取值 | 行为 |
+| --- | --- |
+| `auto`（默认） | 有 `LLM_API_KEY` 就真调 API，没有自动退回离线 |
+| `openai` | 强制调 API（任意 OpenAI 兼容端点） |
+| `fixture` | 强制离线，用 `fixtures/*.json` 代替模型回答 |
+
+**离线模式是刻意设计的**：没有 key 也能把整条流水线（解析 → schema 校验 →
+生成 → 网表比对）跑通和回归；提示词或下游代码改动后，用它确认没被改坏。
+接真 API 只换一个 `--provider`，代码不动。
+
+配真 API：
+
+```bash
+cp .env.example .env    # 然后填 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL
+```
+
 ---
 
 ## 4. 已验证的链路
@@ -167,18 +208,29 @@ ERC 告警构成（实测）：
 
 ```
 kicad-agent/
+├── agent.py            # 五步闭环 CLI（design / revise / check）
+├── providers.py        # LLM 抽象：fixture 离线 / OpenAI 兼容
+├── pipeline.py         # 提示词渲染 + 引脚表注入 + JSON 解析
+├── schema.py           # pydantic 数据契约（BomStage / ConnectionStage / Design）
+├── catalog.py          # 允许使用的符号白名单（防模型编造符号）
+├── prompts/
+│   ├── bom.md          # 步骤 02 提示词
+│   ├── connections.md  # 步骤 03 提示词
+│   └── revise.md       # 步骤 05 提示词
+├── fixtures/           # 离线模式下代替模型回答
 ├── kicad_env.py        # KiCad 安装探测（不写死路径）
 ├── symbol_lib.py       # 符号库加载：UTF-8 读取 + 派生符号展平
 ├── sexpr.py            # 最小 S-表达式解析器（读网表用）
 ├── sch_writer.py       # 设计 JSON -> Schematic（旋转 / 网络标签 / 自动选纸）
-├── generate.py         # 端到端：生成原理图 + 导出网表 + 连通性分区比对
+├── generate.py         # 生成原理图 + 导出网表 + 连通性分区比对
 ├── validate_design.py  # 设计 JSON 校验器（引脚存在性 / 短路 / 漏接）
 ├── spike_gen_sch.py    # 最小闭环示例（电池-R-LED），用来快速验证环境
 ├── bisect_test.py      # 诊断脚本：逐层定位「KiCad 拒绝加载」的原因，非主流程
 ├── designs/
-│   ├── light_alarm.json      # 光闹钟设计（BOM + 网络），LLM 输出契约样张
+│   ├── light_alarm.json      # 光闹钟最终设计
 │   └── light_alarm_spec.md   # 设计说明：架构、功率预算、亮度曲线
 ├── requirements.txt
+├── .env.example        # LLM 配置模板
 └── out/                # 生成物（已 gitignore）
 ```
 
@@ -241,19 +293,17 @@ KiCad 自带的 `bin/python.exe` 才**能** `import pcbnew`，PCB 相关必须�
 
 ## 9. 进度与下一步
 
-- [x] 跑通「生成 `.kicad_sch` → 导出网表 → 自动校验连通性」
-- [x] 去掉硬编码路径，换机器可跑（`kicad_env.py`）
-- [x] 网表结构化解析（`sexpr.py`），替代脆弱的按行 grep
-- [x] 符号库加载：UTF-8 读取 + 派生符号展平（`symbol_lib.py`）
-- [x] 设计 JSON 契约样张（光闹钟，48 器件 / 28 网络）+ 机械校验器
-- [x] 符号旋转（0/90/180/270，已用网表回归验证）
-- [x] 网络标签连接（131 个 stub + 131 个 label）
-- [x] 由设计 JSON 生成原理图（`sch_writer.py` + `generate.py`）
-- [x] 光闹钟整板生成通过：连通性 PASS、ERC **0 error** / 99 warning
-- [ ] 接入 LLM：自然语言 → BOM → 连接关系 JSON（pydantic 校验）
-- [ ] 交互修正：「把电容换成 100nF」→ 重新生成
-- [ ] ERC 闭环：读报告 → 改设计 → 重跑直到通过
-- [ ] 把 `spike_gen_sch.py` 拆成 `bom.py` / `netlist.py` / `sch_writer.py`
+- [x] 01 环境搭建：跑通「生成 `.kicad_sch` → 导出网表 → 自动校验连通性」
+- [x] 01 环境搭建：去掉硬编码路径，换机器可跑（`kicad_env.py`）
+- [x] 02 自然语言 → BOM：提示词 `prompts/bom.md` + 符号白名单约束
+- [x] 03 连接关系生成：提示词 `prompts/connections.md` + 注入真实引脚表
+- [x] 04 JSON → 原理图：`sch_writer.py` + `generate.py`，连通性分区比对
+- [x] 05 交互修正：提示词 `prompts/revise.md`，改值不动连接
+- [x] 反馈闭环：输出不合规时把错误回灌重试（最多 2 次）
+- [x] 离线回归：`--provider fixture`，无 key 也能验证全链路
+- [ ] **接真 API 实测提示词**（需要 `LLM_API_KEY`）—— 提示词质量只能真跑才知道
+- [ ] 多轮对话式修正（当前每次 revise 独立，不带上下文）
+- [ ] ERC 闭环：读报告 → 自动改设计 → 重跑直到通过
 - [ ] 原理图排版优化（当前按功能块排布，标签密集处偏挤）
 
 ---
