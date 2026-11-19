@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "name": "光闹钟 / wake-up light alarm",
+    "version": 1,
+    "description": "预设时间到点后 LED 灯组亮起，亮度随时间单调上升，第 5 分钟达到最大并同时播放音乐闹铃。",
+    "author": "apogee",
+    "status": "design-draft"
+  },
+
+  "params": {
+    "ramp_seconds": 300,
+    "audio_start": "at_peak",
+    "audio_start_comment": "at_peak=第5分钟才响；at_start=到点立刻响。需求原文可两解，此参数留出切换余地。",
+    "led_count": 8,
+    "led_current_ma": 23,
+    "pwm_frequency_hz": 5000,
+    "pwm_resolution_bits": 12,
+    "brightness_curve": "gamma",
+    "gamma": 2.2,
+    "update_rate_hz": 50,
+    "time_source": "ds3231m_i2c_alarm",
+    "supply_voltage_v": 5.0,
+    "led_vf_v": 3.0
+  },
+
+  "bom": [
+    {"ref": "J1",  "lib": "Connector_Generic", "symbol": "Conn_01x02",       "value": "DC 5V 输入",        "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"},
+    {"ref": "F1",  "lib": "Device",            "symbol": "Polyfuse",         "value": "1.5A",              "footprint": "Fuse:Fuse_1206_3216Metric"},
+    {"ref": "D1",  "lib": "Device",            "symbol": "D_Schottky",       "value": "SS34",              "footprint": "Diode_SMD:D_SMA"},
+    {"ref": "U1",  "lib": "Regulator_Linear",  "symbol": "AMS1117-3.3",      "value": "AMS1117-3.3",       "footprint": "Package_TO_SOT_SMD:SOT-223-3_TabPin2"},
+    {"ref": "C1",  "lib": "Device",            "symbol": "C",                "value": "10uF",              "footprint": "Capacitor_SMD:C_0805_2012Metric"},
+    {"ref": "C2",  "lib": "Device",            "symbol": "C",                "value": "22uF",              "footprint": "Capacitor_SMD:C_1206_3216Metric"},
+    {"ref": "C3",  "lib": "Device",            "symbol": "C",                "value": "100nF",             "footprint": "Capacitor_SMD:C_0603_1608Metric"},
+
+    {"ref": "U2",  "lib": "RF_Module",         "symbol": "ESP32-WROOM-32",   "value": "ESP32-WROOM-32",    "footprint": "RF_Module:ESP32-WROOM-32"},
+    {"ref": "R1",  "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "C6",  "lib": "Device",            "symbol": "C",                "value": "1uF",               "footprint": "Capacitor_SMD:C_0603_1608Metric"},
+    {"ref": "R2",  "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "SW1", "lib": "Switch",            "symbol": "SW_Push",          "value": "RESET",             "footprint": "Button_Switch_SMD:SW_SPST_TL3342"},
+    {"ref": "SW2", "lib": "Switch",            "symbol": "SW_Push",          "value": "BOOT",              "footprint": "Button_Switch_SMD:SW_SPST_TL3342"},
+    {"ref": "C4",  "lib": "Device",            "symbol": "C",                "value": "100nF",             "footprint": "Capacitor_SMD:C_0603_1608Metric"},
+    {"ref": "C5",  "lib": "Device",            "symbol": "C",                "value": "10uF",              "footprint": "Capacitor_SMD:C_0805_2012Metric"},
+
+    {"ref": "U3",  "lib": "Timer_RTC",         "symbol": "DS3231M",          "value": "DS3231MZ",          "footprint": "Package_SO:SOIC-16W_5.3x10.2mm_P1.27mm"},
+    {"ref": "BT1", "lib": "Device",            "symbol": "Battery_Cell",     "value": "CR2032",            "footprint": "Battery:BatteryHolder_Keystone_3001"},
+    {"ref": "D2",  "lib": "Device",            "symbol": "D_Schottky",       "value": "BAT54",             "footprint": "Diode_SMD:D_SOD-323"},
+    {"ref": "R3",  "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R4",  "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R5",  "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+
+    {"ref": "SW3", "lib": "Switch",            "symbol": "SW_Push",          "value": "SET",               "footprint": "Button_Switch_SMD:SW_SPST_TL3342"},
+    {"ref": "SW4", "lib": "Switch",            "symbol": "SW_Push",          "value": "UP",                "footprint": "Button_Switch_SMD:SW_SPST_TL3342"},
+    {"ref": "SW5", "lib": "Switch",            "symbol": "SW_Push",          "value": "DOWN",              "footprint": "Button_Switch_SMD:SW_SPST_TL3342"},
+    {"ref": "R16", "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R17", "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R18", "lib": "Device",            "symbol": "R",                "value": "10k",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "J4",  "lib": "Connector_Generic", "symbol": "Conn_01x04",       "value": "OLED I2C",          "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"},
+
+    {"ref": "Q1",  "lib": "Transistor_FET",    "symbol": "AO3400A",          "value": "AO3400A",           "footprint": "Package_TO_SOT_SMD:SOT-23"},
+    {"ref": "R6",  "lib": "Device",            "symbol": "R",                "value": "100",               "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R7",  "lib": "Device",            "symbol": "R",                "value": "100k",              "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "D3",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D4",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D5",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D6",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D7",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D8",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D9",  "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "D10", "lib": "Device",            "symbol": "LED",              "value": "白光 3.0V",          "footprint": "LED_SMD:LED_0805_2012Metric"},
+    {"ref": "R8",  "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R9",  "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R10", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R11", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R12", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R13", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R14", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+    {"ref": "R15", "lib": "Device",            "symbol": "R",                "value": "82",                "footprint": "Resistor_SMD:R_0603_1608Metric"},
+
+    {"ref": "J3",  "lib": "Connector_Generic", "symbol": "Conn_01x04",       "value": "DFPlayer Mini",     "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"}
+  ],
+
+  "nets": [
+    {"name": "+5V_IN",  "nodes": ["J1.1", "F1.1"]},
+    {"name": "+5V_F",   "nodes": ["F1.2", "D1.2"]},
+    {"name": "+5V",     "nodes": ["D1.1", "U1.3", "C1.1", "J3.1", "D3.2", "D4.2", "D5.2", "D6.2", "D7.2", "D8.2", "D9.2", "D10.2"]},
+    {"name": "+3V3",    "nodes": ["U1.2", "C2.1", "C3.1", "U2.2", "R1.1", "R2.1", "C4.1", "C5.1", "U3.2", "R3.1", "R4.1", "R5.1", "R16.1", "R17.1", "R18.1", "J4.2"]},
+    {"name": "GND",     "nodes": ["J1.2", "C1.2", "U1.1", "C2.2", "C3.2", "U2.1", "U2.15", "U2.38", "U2.39", "C6.2", "SW1.2", "SW2.2", "C4.2", "C5.2", "U3.5", "U3.6", "U3.7", "U3.8", "U3.9", "U3.10", "U3.11", "U3.12", "U3.13", "BT1.2", "SW3.2", "SW4.2", "SW5.2", "R7.2", "Q1.2", "J3.2", "J4.1"]},
+
+    {"name": "EN",      "nodes": ["U2.3", "R1.2", "C6.1", "SW1.1"]},
+    {"name": "IO0",     "nodes": ["U2.25", "R2.2", "SW2.1"]},
+    {"name": "I2C_SDA", "nodes": ["U2.33", "U3.15", "R3.2", "J4.3"]},
+    {"name": "I2C_SCL", "nodes": ["U2.36", "U3.16", "R4.2", "J4.4"]},
+    {"name": "RTC_INT", "nodes": ["U2.12", "U3.3", "R5.2"]},
+    {"name": "VBAT",    "nodes": ["U3.14", "D2.1"]},
+    {"name": "BT_POS",  "nodes": ["BT1.1", "D2.2"]},
+
+    {"name": "LED_PWM", "nodes": ["U2.10", "R6.1"]},
+    {"name": "LED_GATE", "nodes": ["R6.2", "R7.1", "Q1.1"]},
+    {"name": "LED_K",   "nodes": ["Q1.3", "R8.2", "R9.2", "R10.2", "R11.2", "R12.2", "R13.2", "R14.2", "R15.2"]},
+    {"name": "LED_A1",  "nodes": ["D3.1", "R8.1"]},
+    {"name": "LED_A2",  "nodes": ["D4.1", "R9.1"]},
+    {"name": "LED_A3",  "nodes": ["D5.1", "R10.1"]},
+    {"name": "LED_A4",  "nodes": ["D6.1", "R11.1"]},
+    {"name": "LED_A5",  "nodes": ["D7.1", "R12.1"]},
+    {"name": "LED_A6",  "nodes": ["D8.1", "R13.1"]},
+    {"name": "LED_A7",  "nodes": ["D9.1", "R14.1"]},
+    {"name": "LED_A8",  "nodes": ["D10.1", "R15.1"]},
+
+    {"name": "BTN_SET", "nodes": ["U2.8", "SW3.1", "R16.2"]},
+    {"name": "BTN_UP",  "nodes": ["U2.9", "SW4.1", "R17.2"]},
+    {"name": "BTN_DOWN", "nodes": ["U2.11", "SW5.1", "R18.2"]},
+
+    {"name": "AUDIO_RX", "nodes": ["U2.27", "J3.3"]},
+    {"name": "AUDIO_TX", "nodes": ["U2.28", "J3.4"]}
+  ],
+
+  "no_connect": [
+    "U3.1", "U3.4",
+    "U2.4", "U2.5", "U2.6", "U2.7", "U2.13", "U2.14",
+    "U2.16", "U2.17", "U2.18", "U2.19", "U2.20", "U2.21", "U2.22",
+    "U2.23", "U2.24", "U2.26", "U2.29", "U2.30", "U2.31", "U2.32",
+    "U2.34", "U2.35", "U2.37"
+  ],
+
+  "blocks": {
+    "power": ["J1", "F1", "D1", "U1", "C1", "C2", "C3"],
+    "mcu":   ["U2", "R1", "C6", "R2", "SW1", "SW2", "C4", "C5"],
+    "rtc":   ["U3", "BT1", "D2", "R3", "R4", "R5"],
+    "ui":    ["SW3", "SW4", "SW5", "R16", "R17", "R18", "J4"],
+    "led":   ["Q1", "R6", "R7", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10",
+              "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15"],
+    "audio": ["J3"]
+  },
+
+  "notes": [
+    "时间来源用 DS3231M 硬件闹钟：MCU 可以深睡眠，到点由 ~INT 唤醒，比软件轮询省电也更准。",
+    "亮度曲线：需求要「亮度线性增长」。PWM 占空比线性涨，人眼看到的是前半段几乎没变化、最后突亮。故按视觉线性做 gamma 校正：duty(t) = (t/T)^2.2，T=300s。",
+    "LED 限流电阻：R = (5.0 - Vf 3.0 - Vds 0.1) / 23mA ≈ 82R，单路 23mA，8 路共约 184mA。",
+    "音频走 DFPlayer Mini 模块（板载 3W 功放，扬声器直连模块），本板只出 4 针控制口：5V/GND/UART。",
+    "功率预算：LED 184mA + ESP32 约 120mA(关 WiFi) + DFPlayer 峰值 500mA + 杂项 ≈ 0.85A，5V/2A 适配器有裕量；F1 选 1.5A。",
+    "已知余量不足：AMS1117 在 ESP32 WiFi 发射峰值(约 500mA)时压差功耗约 0.7W，SOT-223 尚可但偏热；量产应换 buck。",
+    "当前 47 个器件、约 90 个网络节点，是本项目首次「真实板级」规模，对生成器提出了旋转与网络标签两项硬需求。"
+  ]
+}

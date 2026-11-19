@@ -137,9 +137,14 @@ ERC 告警构成（实测）：
 ```
 kicad-agent/
 ├── kicad_env.py        # KiCad 安装探测（不写死路径）
+├── symbol_lib.py       # 符号库加载：UTF-8 读取 + 派生符号展平
 ├── sexpr.py            # 最小 S-表达式解析器（读网表用）
 ├── spike_gen_sch.py    # 主脚本：生成原理图 + 导出网表 + 自动校验
+├── validate_design.py  # 设计 JSON 校验器（引脚存在性 / 短路 / 漏接）
 ├── bisect_test.py      # 诊断脚本：逐层定位「KiCad 拒绝加载」的原因，非主流程
+├── designs/
+│   ├── light_alarm.json      # 光闹钟设计（BOM + 网络），LLM 输出契约样张
+│   └── light_alarm_spec.md   # 设计说明：架构、功率预算、亮度曲线
 ├── requirements.txt
 └── out/                # 生成物（已 gitignore）
 ```
@@ -206,9 +211,12 @@ KiCad 自带的 `bin/python.exe` 才**能** `import pcbnew`，PCB 相关必须�
 - [x] 跑通「生成 `.kicad_sch` → 导出网表 → 自动校验连通性」
 - [x] 去掉硬编码路径，换机器可跑（`kicad_env.py`）
 - [x] 网表结构化解析（`sexpr.py`），替代脆弱的按行 grep
+- [x] 符号库加载：UTF-8 读取 + 派生符号展平（`symbol_lib.py`）
+- [x] 设计 JSON 契约样张（光闹钟，48 器件 / 28 网络）+ 机械校验器
+- [ ] 符号旋转（当前 `pin_point` 只支持 0°）
+- [ ] 网络标签（`label`）—— GND 有 31 个节点，靠实体导线连不现实
+- [ ] 由设计 JSON 生成原理图（`sch_writer.py`）
 - [ ] 接入 LLM：自然语言 → BOM → 连接关系 JSON（pydantic 校验）
-- [ ] 支持符号旋转（当前 `pin_point` 只支持 0°）
-- [ ] 补 `sym-lib-table`，让元件可直接从标准库拉取而不是内嵌
 - [ ] 交互修正：「把电容换成 100nF」→ 重新生成
 - [ ] ERC / DRC 闭环：读报告 → 改设计 → 重跑直到通过
 - [ ] 把 `spike_gen_sch.py` 拆成 `bom.py` / `netlist.py` / `sch_writer.py`
