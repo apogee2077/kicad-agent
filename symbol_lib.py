@@ -104,6 +104,11 @@ def _flatten(sym, lib_name: str, seen: set[str]):
     # 引脚与图形：子符号没有就继承父符号的
     if not any(u.pins for u in out.units):
         out.units = copy.deepcopy(parent.units)
+        # 关键：嵌套 unit 的名字必须以子符号自身名字开头。
+        # 否则 AMS1117-3.3 里会出现 (symbol "AP1117-15_0_1")，
+        # KiCad 认不出这个 unit 属于谁，整份原理图直接判「加载失败」。
+        for unit in out.units:
+            unit.entryName = out.entryName
     if not out.graphicItems:
         out.graphicItems = copy.deepcopy(parent.graphicItems)
 

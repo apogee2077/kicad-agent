@@ -95,7 +95,38 @@ kicad-cli : D:\apps new\KiCad10.0\10.0\bin\kicad-cli.exe
 
 产物在 `out/`：`blinky.kicad_sch`（KiCad 可直接打开）、`blinky.net`。
 
-### 3.3 其他校验命令
+### 3.3 从设计 JSON 生成整块板子的原理图
+
+```powershell
+.venv\Scripts\python.exe generate.py designs/light_alarm.json
+```
+
+它会依次完成：读设计 JSON → 放置 48 个器件（自动选纸）→ 每引脚引 stub 并打网络标签
+→ 加 `PWR_FLAG` 压掉电源告警 → 写出 `.kicad_sch` → 调 `kicad-cli` 导出网表
+→ **把网表的分区和设计的分区逐组比对**。
+
+预期输出：
+
+```
+原理图    : out\light_alarm.kicad_sch  (126664 字节)
+图纸      : A3
+器件      : 51
+内嵌符号  : 14
+导线 stub : 131
+网络标签  : 131
+no_connect: 25
+
+设计网络数(≥2节点): 28
+网表网络数(≥2节点): 28
+
+连通性比对: PASS —— 网表分区与设计完全一致
+```
+
+这里的比对**只看连通性分区，不看网络名**：把设计里的每个网络和网表里的每个网络都表示成
+「引脚集合的集合」，两者必须完全相等。这样能抓住「图画出来了但引脚没接上」这类错误 ——
+KiCad 本身不会报错，只是那个脚悬空。
+
+### 3.4 其他校验命令
 
 ```bash
 $CLI sch erc        --format json -o out/blinky-erc.json out/blinky.kicad_sch
@@ -139,8 +170,10 @@ kicad-agent/
 ├── kicad_env.py        # KiCad 安装探测（不写死路径）
 ├── symbol_lib.py       # 符号库加载：UTF-8 读取 + 派生符号展平
 ├── sexpr.py            # 最小 S-表达式解析器（读网表用）
-├── spike_gen_sch.py    # 主脚本：生成原理图 + 导出网表 + 自动校验
+├── sch_writer.py       # 设计 JSON -> Schematic（旋转 / 网络标签 / 自动选纸）
+├── generate.py         # 端到端：生成原理图 + 导出网表 + 连通性分区比对
 ├── validate_design.py  # 设计 JSON 校验器（引脚存在性 / 短路 / 漏接）
+├── spike_gen_sch.py    # 最小闭环示例（电池-R-LED），用来快速验证环境
 ├── bisect_test.py      # 诊断脚本：逐层定位「KiCad 拒绝加载」的原因，非主流程
 ├── designs/
 │   ├── light_alarm.json      # 光闹钟设计（BOM + 网络），LLM 输出契约样张
@@ -213,13 +246,15 @@ KiCad 自带的 `bin/python.exe` 才**能** `import pcbnew`，PCB 相关必须�
 - [x] 网表结构化解析（`sexpr.py`），替代脆弱的按行 grep
 - [x] 符号库加载：UTF-8 读取 + 派生符号展平（`symbol_lib.py`）
 - [x] 设计 JSON 契约样张（光闹钟，48 器件 / 28 网络）+ 机械校验器
-- [ ] 符号旋转（当前 `pin_point` 只支持 0°）
-- [ ] 网络标签（`label`）—— GND 有 31 个节点，靠实体导线连不现实
-- [ ] 由设计 JSON 生成原理图（`sch_writer.py`）
+- [x] 符号旋转（0/90/180/270，已用网表回归验证）
+- [x] 网络标签连接（131 个 stub + 131 个 label）
+- [x] 由设计 JSON 生成原理图（`sch_writer.py` + `generate.py`）
+- [x] 光闹钟整板生成通过：连通性 PASS、ERC **0 error** / 99 warning
 - [ ] 接入 LLM：自然语言 → BOM → 连接关系 JSON（pydantic 校验）
 - [ ] 交互修正：「把电容换成 100nF」→ 重新生成
-- [ ] ERC / DRC 闭环：读报告 → 改设计 → 重跑直到通过
+- [ ] ERC 闭环：读报告 → 改设计 → 重跑直到通过
 - [ ] 把 `spike_gen_sch.py` 拆成 `bom.py` / `netlist.py` / `sch_writer.py`
+- [ ] 原理图排版优化（当前按功能块排布，标签密集处偏挤）
 
 ---
 
