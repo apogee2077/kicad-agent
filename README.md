@@ -227,12 +227,22 @@ kicad-agent/
 ├── spike_gen_sch.py    # 最小闭环示例（电池-R-LED），用来快速验证环境
 ├── bisect_test.py      # 诊断脚本：逐层定位「KiCad 拒绝加载」的原因，非主流程
 ├── designs/
-│   ├── light_alarm.json      # 光闹钟最终设计
+│   ├── light_alarm.json      # 光闹钟最终设计（5V 白光）
+│   ├── light_alarm_red.json  # 交互修正示例：LED 换红色 + 电阻重算
 │   └── light_alarm_spec.md   # 设计说明：架构、功率预算、亮度曲线
+├── samples/            # 生成物存档，不用装环境也能直接查看
+│   ├── light_alarm_red.kicad_sch   # 原理图（KiCad 打开）
+│   ├── light_alarm_red.net         # 网表（连通性证据）
+│   └── light_alarm_red-erc.json    # ERC 报告（0 error）
+├── docs/
+│   └── W1-开发日志.md         # 环境搭建期的过程记录与踩坑
 ├── requirements.txt
 ├── .env.example        # LLM 配置模板
-└── out/                # 生成物（已 gitignore）
+└── out/                # 运行时生成物（已 gitignore）
 ```
+
+> `samples/` 里的是某一时刻的生成结果，用于快速查看和对比；
+> `out/` 是每次运行都会重建的临时产物，不纳入版本库。
 
 ---
 
