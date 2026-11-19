@@ -1,0 +1,28 @@
+# === 虚拟环境 ===
+.venv/
+venv/
+env/
+
+# === 生成物（脚本可随时重建） ===
+out/
+*.net
+*.kicad_prl
+*-bom.csv
+*-erc.json
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# === 密钥：绝对不要提交 ===
+.env
+.env.local
+*.key
+
+# === 编辑器 / 系统 ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
