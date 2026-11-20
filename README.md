@@ -251,7 +251,7 @@ kicad-agent/
 │   ├── light_alarm_red.net         # 网表（连通性证据）
 │   └── light_alarm_red-erc.json    # ERC 报告（0 error）
 ├── docs/
-│   └── W1-开发日志.md         # 环境搭建期的过程记录与踩坑
+│   └── 开发日志.md            # W1 环境搭建 + W2 工具调用的过程记录与踩坑
 ├── requirements.txt
 ├── .env.example        # LLM 配置模板
 └── out/                # 运行时生成物（已 gitignore）
