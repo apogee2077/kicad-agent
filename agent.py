@@ -30,7 +30,8 @@ from pipeline import (build_bom_request, build_connection_request,
                       build_revise_request, extract_json, parse_bom,
                       parse_connections)
 from providers import make_provider
-from schema import BomStage, Design, merge_stages
+from schema import BomStage, Design, ConnectionStage, merge_stages
+from validate_design import check_design, format_feedback
 
 MAX_RETRIES = 2
 
@@ -46,6 +47,12 @@ def call_with_retry(provider, step: str, system: str, user: str, parser):
             return parser(raw)
         except Exception as exc:  # noqa: BLE001 - 任何不合规都要能回灌
             last_error = exc
+            # 保留模型原始输出，重试失败时这是唯一的排查依据
+            try:
+                Path("out").mkdir(exist_ok=True)
+                Path(f"out/last_raw_{step}.txt").write_text(raw, encoding="utf-8")
+            except OSError:
+                pass
             print(f"  [重试 {attempt + 1}/{MAX_RETRIES}] {step} 输出不合规：" f"{type(exc).__name__}: {str(exc)[:200]}",
                   file=sys.stderr)
             user = (
@@ -70,8 +77,40 @@ def parse_bom_checked(text: str) -> BomStage:
     return bom
 
 
+def make_connection_parser(bom: BomStage):
+    """构造步骤 03 的解析器：解析 -> 合并 -> 电气校验，不合格就抛错触发重试。
+
+    这是「把校验提前」的关键。以前 validate_design 跑在生成原理图之后，
+    模型永远看不到自己的电气错误（例如四颗 LED 阳极全部悬空），
+    于是一份根本不能工作的设计也能一路跑到出图。
+    """
+
+    def parse_and_check(text: str) -> ConnectionStage:
+        conn = parse_connections(text)
+        design = merge_stages(bom, conn)
+        errors, _warnings, _stats = check_design(
+            design.model_dump(exclude_none=True), strict=True
+        )
+        if errors:
+            raise ValueError(
+                "电气校验未通过，请修正后重新输出：\n" + format_feedback(errors)
+            )
+        return conn
+
+    return parse_and_check
+
+
 def parse_design(text: str) -> Design:
-    return Design.model_validate(json.loads(extract_json(text)))
+    """步骤 05 用：解析完整设计，并做同样的电气校验。"""
+    design = Design.model_validate(json.loads(extract_json(text)))
+    errors, _warnings, _stats = check_design(
+        design.model_dump(exclude_none=True), strict=True
+    )
+    if errors:
+        raise ValueError(
+            "电气校验未通过，请修正后重新输出：\n" + format_feedback(errors)
+        )
+    return design
 
 
 # ---------------------------------------------------------------- 各步骤
@@ -113,7 +152,8 @@ def cmd_design(args: argparse.Namespace) -> int:
     print("\n===== 03 BOM + 真实引脚表 -> 连接关系 =====")
     sys_c, usr_c = build_connection_request(requirement, bom)
     print(f"（提示词长度 {len(usr_c)} 字符，含 {len(bom.bom)} 个器件的真实引脚表）")
-    conn = call_with_retry(provider, "connections", sys_c, usr_c, parse_connections)
+    conn = call_with_retry(provider, "connections", sys_c, usr_c,
+                           make_connection_parser(bom))
     print(f"得到 {len(conn.nets)} 个网络、{len(conn.no_connect)} 个悬空引脚、"
           f"{len(conn.erc_power_flags)} 个电源标志网络")
 
