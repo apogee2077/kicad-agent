@@ -249,9 +249,13 @@ kicad-agent/
 ├── samples/            # 生成物存档，不用装环境也能直接查看
 │   ├── light_alarm_red.kicad_sch   # 原理图（KiCad 打开）
 │   ├── light_alarm_red.net         # 网表（连通性证据）
-│   └── light_alarm_red-erc.json    # ERC 报告（0 error）
+│   ├── light_alarm_red-erc.json    # ERC 报告（0 error）
+│   ├── failures/                   # 失败案例（改造前的流水灯）—— 对照用，勿删
+│   └── success/                    # 成功案例（积木版流水灯）
 ├── docs/
-│   └── 开发日志.md            # W1 环境搭建 + W2 工具调用的过程记录与踩坑
+│   ├── 交接文档.md              # 接手必读：环境、用法、已知问题、下一步
+│   ├── 开发日志.md              # W1 环境搭建 + W2 工具调用的过程记录与踩坑
+│   └── 提示词与架构调研.md       # 同类项目调研（CircuitAgent 等）
 ├── requirements.txt
 ├── .env.example        # LLM 配置模板
 └── out/                # 运行时生成物（已 gitignore）

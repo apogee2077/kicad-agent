@@ -1,0 +1,16 @@
+{
+  "circuit_blocks": [
+    {"type": "led", "gpio": "U1.10", "color": "Red", "resistor": "220"},
+    {"type": "led", "gpio": "U1.11", "color": "Green", "resistor": "220"},
+    {"type": "led", "gpio": "U1.12", "color": "Blue", "resistor": "220"},
+    {"type": "led", "gpio": "U1.13", "color": "Yellow", "resistor": "220"}
+  ],
+  "nets": [
+    {"name": "+5V", "nodes": ["J1.1", "U2.3"]},
+    {"name": "+3V3", "nodes": ["U2.2", "U1.2"]},
+    {"name": "GND", "nodes": ["J1.2", "U1.1", "U1.15", "U1.38", "U1.39", "U2.1", "C1.1", "C2.1"]},
+    {"name": "ESP32_EN", "nodes": ["U1.3", "U2.2"]}
+  ],
+  "no_connect": ["U1.4", "U1.5", "U1.17", "U1.18", "U1.19", "U1.20", "U1.21", "U1.22", "U1.32"],
+  "erc_power_flags": ["+5V"]
+}
