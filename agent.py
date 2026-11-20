@@ -34,7 +34,7 @@ from providers import make_provider
 from schema import BomStage, Design, ConnectionStage, merge_stages
 from validate_design import check_design, format_feedback
 
-MAX_RETRIES = 2
+MAX_RETRIES = 4      # 实测：模型每次重试都在收敛，2 次不够
 
 
 # ---------------------------------------------------------------- 反馈闭环
@@ -54,8 +54,8 @@ def call_with_retry(provider, step: str, system: str, user: str, parser):
                 Path(f"out/last_raw_{step}.txt").write_text(raw, encoding="utf-8")
             except OSError:
                 pass
-            print(f"  [重试 {attempt + 1}/{MAX_RETRIES}] {step} 输出不合规：" f"{type(exc).__name__}: {str(exc)[:200]}",
-                  file=sys.stderr)
+            print(f"  [第 {attempt + 1}/{MAX_RETRIES + 1} 次尝试] {step} 输出不合规："
+                  f"{type(exc).__name__}: {str(exc)[:300]}", file=sys.stderr)
             user = (
                 f"{user}\n\n# 上一次输出无效\n\n"
                 f"错误信息：\n{exc}\n\n"

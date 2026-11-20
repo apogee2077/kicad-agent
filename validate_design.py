@@ -115,8 +115,11 @@ def check_design(data: dict, *, strict: bool = True) -> tuple[list[str], list[st
                 continue
             key = (ref, pin)
             if key in pin_owner and pin_owner[key] != net_name:
+                pin_name = pin_table[ref].get(pin, "")
+                hint = f"（引脚名 {pin_name}）" if pin_name else ""
                 errors.append(
-                    f"短路: {ref}.{pin} 同时出现在网络 {pin_owner[key]} 和 {net_name}"
+                    f"短路: {ref}.{pin}{hint} 同时接在 {pin_owner[key]} 和 {net_name}，"
+                    f"一个引脚只能属于一个网络"
                 )
             pin_owner[key] = net_name
 

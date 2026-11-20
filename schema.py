@@ -139,12 +139,14 @@ class ConnectionStage(BaseModel):
 
     @model_validator(mode="after")
     def _check_conflicts(self):
+        # 注意：这里**不**检查「同一引脚出现在两个网络」。
+        # 交给 validate_design.check_design 去做 —— 那里能拿到引脚名，
+        # 可以给出「U1.15（GND）不能接到 +3V3」这种可执行的错误信息，
+        # 而这里的报错只有引脚号，模型看不懂。
         used: dict[str, str] = {}
         for net in self.nets:
             for node in net.nodes:
-                if node in used:
-                    raise ValueError(f"引脚 {node} 同时接在 {used[node]} 和 {net.name}")
-                used[node] = net.name
+                used.setdefault(node, net.name)
         clash = sorted(set(self.no_connect) & set(used))
         if clash:
             raise ValueError(f"引脚既标了 no_connect 又接了网络: {clash}")
