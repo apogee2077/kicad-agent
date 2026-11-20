@@ -59,7 +59,7 @@ class OpenAICompatProvider:
     name = "openai"
 
     def __init__(self, model: str | None = None, base_url: str | None = None,
-                 api_key: str | None = None, temperature: float = 0.2):
+                 api_key: str | None = None, temperature: float = 0.0):
         try:
             from dotenv import load_dotenv
             load_dotenv()

@@ -24,6 +24,7 @@ import json
 import sys
 from pathlib import Path
 
+from blocks import expand_circuit_blocks
 from catalog import allowed_pairs
 from generate import main as generate_main
 from pipeline import (build_bom_request, build_connection_request,
@@ -85,9 +86,11 @@ def make_connection_parser(bom: BomStage):
     于是一份根本不能工作的设计也能一路跑到出图。
     """
 
-    def parse_and_check(text: str) -> ConnectionStage:
+    def parse_and_check(text: str):
         conn = parse_connections(text)
-        design = merge_stages(bom, conn)
+        # 先把积木展开成真实元件与网络，再校验 —— 校验的是「最终电路」
+        bom_expanded, conn_expanded = expand_circuit_blocks(bom, conn)
+        design = merge_stages(bom_expanded, conn_expanded)
         errors, _warnings, _stats = check_design(
             design.model_dump(exclude_none=True), strict=True
         )
@@ -95,7 +98,7 @@ def make_connection_parser(bom: BomStage):
             raise ValueError(
                 "电气校验未通过，请修正后重新输出：\n" + format_feedback(errors)
             )
-        return conn
+        return bom_expanded, conn_expanded
 
     return parse_and_check
 
@@ -152,12 +155,15 @@ def cmd_design(args: argparse.Namespace) -> int:
     print("\n===== 03 BOM + 真实引脚表 -> 连接关系 =====")
     sys_c, usr_c = build_connection_request(requirement, bom)
     print(f"（提示词长度 {len(usr_c)} 字符，含 {len(bom.bom)} 个器件的真实引脚表）")
-    conn = call_with_retry(provider, "connections", sys_c, usr_c,
-                           make_connection_parser(bom))
+    bom_final, conn = call_with_retry(provider, "connections", sys_c, usr_c,
+                                      make_connection_parser(bom))
     print(f"得到 {len(conn.nets)} 个网络、{len(conn.no_connect)} 个悬空引脚、"
           f"{len(conn.erc_power_flags)} 个电源标志网络")
+    if conn.circuit_blocks:
+        kinds = ", ".join(str(b.get("type")) for b in conn.circuit_blocks)
+        print(f"使用了 {len(conn.circuit_blocks)} 个电路积木：{kinds}")
 
-    design = merge_stages(bom, conn)
+    design = merge_stages(bom_final, conn)
     save = Path(args.save) if args.save else Path("out/design.json")
     return _finish(design, save, Path(args.sch) if args.sch else None)
 

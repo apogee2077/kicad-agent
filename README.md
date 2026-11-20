@@ -334,7 +334,24 @@ KiCad 自带的 `bin/python.exe` 才**能** `import pcbnew`，PCB 相关必须�
 
 ---
 
-## 10. AI 使用声明
+## 10. 借鉴与致谢
+
+本项目的部分设计思想借鉴了以下开源项目，在此明确标注来源，未复制其代码：
+
+| 来源项目 | 许可证 | 借鉴了什么 | 我们的实现 |
+| --- | --- | --- | --- |
+| [CircuitAgent · Community Edition](https://pypi.org/project/circuit-agent-client/0.1.3/) | MIT | **「预验证电路积木」架构**。其原文：「让大语言模型直接生成底层走线、焊盘与封装，几乎必然产出非法几何或引脚短路……把 LLM 的输出约束在预验证的电路积木上……模型只负责选积木，不负责画线」 | `blocks.py`。积木的元件选型、位号分配、网络命名、拓扑校验均由本项目依据 KiCad 符号库自行编写 |
+| 同上 | MIT | 每个积木配独立单元测试的做法 | `tests/test_blocks.py` |
+| 同上 | MIT | `unmatched` 字段（未识别意图单独上报，不静默丢弃） | 规划中，尚未实现 |
+
+其余项目（[circuitron](https://github.com/IAGOVP/circuitron)、[ChatSCH](https://dl.acm.org/doi/10.1007/978-981-92-3441-7_32)、[Nature LLM-EDA 框架](https://www.nature.com/articles/s41598-026-75880-8) 等）仅作调研参考，未采用其代码。
+完整调研记录见 [`docs/提示词与架构调研.md`](docs/提示词与架构调研.md)。
+
+**为什么要借鉴它**：本项目实测两次让真实模型生成流水灯电路，模型两次都把 LED 与限流电阻接错（`GPIO—电阻—GND`、LED 阳极悬空），且三次重试仍复现 —— 这是概念性错误，靠反馈无法纠正。改用积木后，该段拓扑由代码保证，模型只需指定「哪个 GPIO 驱动什么颜色的 LED」。
+
+---
+
+## 11. AI 使用声明
 
 按课程学术诚信要求，这里如实记录 AI 参与情况。
 

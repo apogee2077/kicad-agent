@@ -106,11 +106,28 @@ class ConnectionStage(BaseModel):
     """步骤 03 的产出：只要连接，不要清单。"""
 
     nets: list[Net]
+    circuit_blocks: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description=(
+            "预验证积木调用（见 blocks.py）。"
+            "积木内部的连线由程序生成，模型不得自己写这些 net。"
+        ),
+    )
     no_connect: list[str] = Field(default_factory=list, description="悬空引脚")
     erc_power_flags: list[str] = Field(
         default_factory=list,
         description="需要加 PWR_FLAG 的网络（有电源输入脚却没有电源输出驱动的网络）",
     )
+
+    @field_validator("circuit_blocks")
+    @classmethod
+    def _check_blocks(cls, v: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        for index, call in enumerate(v, start=1):
+            if not isinstance(call, dict):
+                raise ValueError(f"circuit_blocks[{index}] 必须是对象")
+            if not call.get("type"):
+                raise ValueError(f"circuit_blocks[{index}] 缺少 type 字段")
+        return v
 
     @field_validator("no_connect")
     @classmethod

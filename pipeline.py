@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 
 from catalog import catalog_text
+from blocks import block_catalog_text
 from schema import BomStage, ConnectionStage
 from symbol_lib import load_symbol, symbol_pins
 
@@ -91,6 +92,7 @@ def build_connection_request(requirement: str, bom: BomStage) -> tuple[str, str]
         REQUIREMENT=requirement.strip(),
         BOM=bom_summary(bom),
         PIN_TABLES=pin_tables(bom),
+        BLOCK_CATALOG=block_catalog_text(),
     )
     system = "你是资深硬件工程师。你只输出严格合法的 JSON，不输出任何多余文字。"
     return system, user
